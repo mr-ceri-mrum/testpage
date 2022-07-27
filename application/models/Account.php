@@ -4,6 +4,7 @@ namespace application\models;
 
 use application\core\Model;
 
+
 class Account extends Model {
 
 	public function validate($input, $post) {
@@ -101,7 +102,8 @@ class Account extends Model {
 		return substr(str_shuffle(str_repeat('0123456789abcdefghijklmnopqrstuvwxyz', 30)), 0, 30);
 	}
 
-	public function register($post) {
+	public function register($post) 
+	{
 		$token = $this->createToken();
 		if ($post['ref'] == 'none') {
 			$ref = 0;
@@ -203,11 +205,58 @@ class Account extends Model {
 		}
 		$this->db->query('UPDATE accounts SET email = :email, wallet = :wallet'.$sql.' WHERE id = :id', $params);
 	}
-	public function postData($id) {
-		$params = [
-			'id' => $id,
-		];
-		return $this->db->row('SELECT * FROM lessons WHERE id = :id', $params);
+	public function postsCount()
+	{
+		return $this->db->column('SELECT COUNT(id) FROM users_posts');
 	}
 
+	public function postValidateUser($post)
+	{
+		$nameLen = iconv_strlen($post['name']);
+		
+		$textLen = iconv_strlen($post['text']);
+		if ($nameLen < 3 or $nameLen > 100) {
+			$this->error = 'Название должно содержать от 3 до 100 символов';
+			return false;
+		} 
+		elseif ($textLen < 10 or $textLen > 5000) {
+			$this->error = 'Текст должнен содержать от 10 до 5000 символов';
+			return false;
+		}else{
+			return true;
+		}
+		
+		return true;
+	}
+	public function postsList()
+	{
+		$max = 10;
+		$params = [
+			'max' => $max,
+			'start' => ((($route['page'] ?? 1) - 1) * $max),
+		];
+		return $this->db->row('SELECT * FROM users_posts ORDER BY id DESC LIMIT :start, :max', $params);
+	}
+	public function postListUser($login)
+	{
+		//$max = 10;
+		$params = [
+			'login' => $login,
+		];
+		return $this->db->row('SELECT `text`, `name`, `post_login` FROM users_posts WHERE users_posts.post_login =:login', $params);
+	}
+	
+	public function postAddUsersPost($post, $post_login)//id from session
+	{
+		$params = [
+			'id' => '',
+			'name' => $post['name'],
+			'text' => $post['text'],
+			'post_login' => $post_login,
+		];
+		$this->db->query('INSERT INTO users_posts VALUES (:id, :name, :text, :post_login )', $params);
+		
+		return $this->db->lastInsertId();
+	}
+	
 }

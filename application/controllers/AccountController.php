@@ -5,6 +5,7 @@ namespace application\controllers;
 use application\core\Controller;
 use application\models\Account;
 use application\models\Admin;
+use application\lib\PostsPagination;
 
 class AccountController extends Controller {
 
@@ -47,9 +48,7 @@ class AccountController extends Controller {
 			}
 			if (!$this->model->checkData($_POST['login'], $_POST['password'])) {
 				$this->view->message('error', 'Логин или пароль указан неверно');
-			// }elseif (!$this->model->checknumber($_POST['wallet'])){
-			// 	$this->view->message('error', 'Такого номера не существует');
-			//
+			
 			}
 			$this->model->login($_POST['login']);
 			$this->view->location('account/profile');
@@ -61,21 +60,46 @@ class AccountController extends Controller {
 
 	public function profileAction()
 	{
-		$this->view->render('Профиль');
+		//To here stay my posts from Db
+		$pagination = new PostsPagination($this->route, $this->model->postsCount());
+		$vars = [
+			'pagination' => $pagination->get(),
+			'list' => $this->model->postListUser($_SESSION['account']['login']),//должен возврощасть посты только профиля
+		];
+		$this->view->render('Профиль', $vars);
+		
+		
+	}
+	
+	public function createpostAction()
+	{
+		
+		if(!empty($_POST)){
+			if(!$this->model->postValidateUser($_POST))
+			{
+				$this->view->message('success', $this->model->error);
+			}
+			$id = $this->model->postAddUsersPost($_POST, $_SESSION['account']['login']);
+			
+			if(!$id){$this->view->message('success', 'Ошибка обработки запроса');}
+			
+			$this->view->message('success', 'Пост добавлен');
+		}
+	
+		$this->view->render('createpost');
+		//debug($_POST);
 	}
 
-	// public function lessonsAction() {
-	// 	$accountModel = new Account;
-	// 	if (!$accountModel->isPostExists($this->route['id'])) {
-	// 		$this->view->errorCode(404);
-	// 	}
-	// 	$vars = [
-	// 		'data' => $accountModel->postData($this->route['id'])[0],
-	// 	];
-	// 	$this->view->render('Пост', $vars);
-	// }
-	/*
-	**********************editAction() 
+	public function editPostAction()
+	{
+
+	}
+
+	public function deletePostAction()
+	{
+
+	}
+	/**********************editAction() ************************
 
 	*/
 	public function editAction()
@@ -98,13 +122,9 @@ class AccountController extends Controller {
 		$this->view->render('Настройки профиля');
 	}
 
-	public function logoutAction() {
-		unset($_SESSION['account']);
-		$this->view->redirect('account/login');
-	}
-
 	// Восстановление пароля
-
+	/**********************recoveryAction() *************************/
+	
 	public function recoveryAction() 
 	{
 		if (!empty($_POST)) {
@@ -122,8 +142,9 @@ class AccountController extends Controller {
 		}
 		$this->view->render('Восстановление пароля');
 	}
-
-	public function resetAction() {
+	/**********************resetAction() *************************/
+	public function resetAction() 
+	{
 		if (!$this->model->checkTokenExists($this->route['token'])) {
 			$this->view->redirect('account/login');
 		}
@@ -132,5 +153,14 @@ class AccountController extends Controller {
 			'password' => $password,
 		];
 		$this->view->render('Пароль сброшен', $vars);
+	}
+
+
+
+	//exit
+	public function logoutAction() 
+	{
+		unset($_SESSION['account']);
+		$this->view->redirect('account/login');
 	}
 }

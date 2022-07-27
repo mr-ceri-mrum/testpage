@@ -19,5 +19,22 @@ class Main extends Model {
 		return $this->db->row('SELECT * FROM posts ORDER BY id DESC LIMIT :start, :max', $params);
 	}
 
-	
+	public function checkStatuslessons($vars, $session)
+	{
+		if($vars <= $session){
+			return true;
+		}
+		// $params = [
+		// 	'vars' => $vars,
+		// ];
+		// $sql = 'SELECT Predmet.PredmetID, Uchebnick, UchebnickName FROM Predmet INNER JOIN Uchebnik ON Predmet.UchebnikID = Uchebnik.UchebnikID';
+		// $this->db->column(
+		// 	'SELECT accounts.statuslessons, posts.statuslessons  FROM posts INNER JOIN posts ON accounts.statuslessons = posts.statuslessons', $params
+		// );
+	}
+
+	public function updateStatuslessons($session)
+	{
+		$session = 1;
+	}
 }
